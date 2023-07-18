@@ -2,7 +2,10 @@ use std::env;
 
 use serenity::{
     async_trait,
-    model::prelude::Ready,
+    model::{
+        prelude::{ChannelId, Ready},
+        voice::VoiceState,
+    },
     prelude::{Context, EventHandler, GatewayIntents},
     Client,
 };
@@ -13,6 +16,23 @@ struct Handler;
 impl EventHandler for Handler {
     async fn ready(&self, _: Context, ready: Ready) {
         println!("{} is connected", ready.user.name)
+    }
+
+    async fn voice_state_update(&self, ctx: Context, old: Option<VoiceState>, new: VoiceState) {
+        match old {
+            Some(o) => {
+                if o.mute != new.mute && new.mute {
+                    new.member
+                        .unwrap()
+                        .move_to_voice_channel(&ctx.http, ChannelId(123))
+                        .await
+                        .expect("Something went wrong moving the user to muted channel");
+                }
+            }
+            None => {
+                eprintln!("Something went wrong getting the user who changed the voice state!");
+            }
+        }
     }
 }
 
