@@ -13,6 +13,7 @@ use serenity::{
 struct Handler {
     muted_chat_id: u64,
     general_chat_id: u64,
+    server_owner_id: u64,
 }
 
 #[async_trait]
@@ -26,6 +27,11 @@ impl EventHandler for Handler {
             Some(o) => {
                 if o.mute != new.mute && new.mute {
                     let user = new.member.unwrap();
+
+                    if user.user.id == self.server_owner_id {
+                        return;
+                    }
+
                     user.move_to_voice_channel(&ctx.http, ChannelId(self.muted_chat_id))
                         .await
                         .expect("Something went wrong moving the user to muted channel");
@@ -61,6 +67,10 @@ async fn main() {
             .parse::<u64>()
             .unwrap(),
         general_chat_id: env::var("GENERAL_CHAT_ID")
+            .expect("Expected MUTED_CHAT_ID in environment")
+            .parse::<u64>()
+            .unwrap(),
+        server_owner_id: env::var("SERVER_OWNER_ID")
             .expect("Expected MUTED_CHAT_ID in environment")
             .parse::<u64>()
             .unwrap(),
