@@ -24,7 +24,15 @@ impl EventHandler for Handler {
                 if o.mute != new.mute && new.mute {
                     new.member
                         .unwrap()
-                        .move_to_voice_channel(&ctx.http, ChannelId(123))
+                        .move_to_voice_channel(
+                            &ctx.http,
+                            ChannelId(
+                                env::var("MUTED_CHAT_ID")
+                                    .expect("Expected MUTED_CHAT_ID in the environment")
+                                    .parse::<u64>()
+                                    .unwrap(),
+                            ),
+                        )
                         .await
                         .expect("Something went wrong moving the user to muted channel");
                 }
