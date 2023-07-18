@@ -38,6 +38,8 @@ impl EventHandler for Handler {
 
 #[tokio::main]
 async fn main() {
+    dotenv::dotenv().expect("Failed to load .env file");
+
     let token = env::var("DISCORD_TOKEN").expect("Expected a discord token in the environment");
 
     let intents = GatewayIntents::GUILDS
