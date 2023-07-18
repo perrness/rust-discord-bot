@@ -10,7 +10,10 @@ use serenity::{
     Client,
 };
 
-struct Handler;
+struct Handler {
+    muted_chat_id: u64,
+    general_chat_id: u64,
+}
 
 #[async_trait]
 impl EventHandler for Handler {
@@ -22,19 +25,17 @@ impl EventHandler for Handler {
         match old {
             Some(o) => {
                 if o.mute != new.mute && new.mute {
-                    new.member
-                        .unwrap()
-                        .move_to_voice_channel(
-                            &ctx.http,
-                            ChannelId(
-                                env::var("MUTED_CHAT_ID")
-                                    .expect("Expected MUTED_CHAT_ID in the environment")
-                                    .parse::<u64>()
-                                    .unwrap(),
-                            ),
-                        )
+                    let user = new.member.unwrap();
+                    user.move_to_voice_channel(&ctx.http, ChannelId(self.muted_chat_id))
                         .await
                         .expect("Something went wrong moving the user to muted channel");
+                    let channel_id = ChannelId(self.general_chat_id);
+                    channel_id
+                        .send_message(&ctx.http, |m| {
+                            m.content(format!("{} muted themselves!", user.user.name))
+                        })
+                        .await
+                        .expect("Could not send message about user muting themself");
                 }
             }
             None => {
@@ -54,8 +55,19 @@ async fn main() {
         | GatewayIntents::GUILD_MESSAGES
         | GatewayIntents::GUILD_VOICE_STATES;
 
+    let handler = Handler {
+        muted_chat_id: env::var("MUTED_CHAT_ID")
+            .expect("Expected MUTED_CHAT_ID in environment")
+            .parse::<u64>()
+            .unwrap(),
+        general_chat_id: env::var("GENERAL_CHAT_ID")
+            .expect("Expected MUTED_CHAT_ID in environment")
+            .parse::<u64>()
+            .unwrap(),
+    };
+
     let mut client = Client::builder(token, intents)
-        .event_handler(Handler)
+        .event_handler(handler)
         .await
         .expect("Error creating client :(");
 
