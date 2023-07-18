@@ -1,3 +1,7 @@
+use serenity::prelude::GatewayIntents;
+
 fn main() {
-    println!("Hello, world!");
+    let intents = GatewayIntents::GUILDS
+        | GatewayIntents::GUILD_MESSAGES
+        | GatewayIntents::GUILD_VOICE_STATES;
 }
